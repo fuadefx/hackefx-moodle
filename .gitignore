@@ -1,2 +1,4 @@
-/moodledata/*
 /dbdata/*
+/moodledata/*
+!/moodledata/README.md
+!/dbdata/README.md
