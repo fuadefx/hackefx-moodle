@@ -1,0 +1,62 @@
+FROM moodlehq/moodle-php-apache:8.2
+
+# USER root
+
+# Important packages for building tools
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Download Moodle
+COPY moodle /var/www/html \
+    && chown -R www-data:www-data /var/www/html
+
+# # --------------------------
+# # 1. Install CodeRunner
+# # --------------------------
+# RUN git clone https://github.com/trampgeek/moodle-qtype_coderunner.git /var/www/html/question/type/coderunner \
+#     && cd /var/www/html/question/type/coderunner \
+#     && git submodule update --init --recursive \
+#     && chown -R www-data:www-data /var/www/html/question/type/coderunner
+
+
+# # --------------------------
+# # 2. Install SEB (Safe Exam Browser)
+# #     Plugin name: quizaccess_seb
+# # --------------------------
+# # RUN git clone https://github.com/ethz-let/moodle-quizaccess_seb.git /var/www/html/mod/quiz/accessrule/seb \
+# #     && chown -R www-data:www-data /var/www/html/mod/quiz/accessrule/seb
+
+
+# # --------------------------
+# # 3. (Optional) Install recommended Moodle plugins
+# #    - Adaptive quiz behavior
+# #    - Syntax highlighting filter
+# # --------------------------
+# RUN git clone https://github.com/trampgeek/moodle-qbehaviour_adaptive_adapted_for_coderunner.git \
+#     /var/www/html/question/behaviour/adaptive_adapted_for_coderunner \
+#     && chown -R www-data:www-data /var/www/html/question/behaviour/adaptive_adapted_for_coderunner
+
+# RUN git clone https://github.com/gjbarnard/moodle-filter_synhi.git \
+#     /var/www/html/filter/syntaxhighlighter \
+#     && chown -R www-data:www-data /var/www/html/filter/syntaxhighlighter
+
+
+# # --------------------------
+# # 4. Permissions
+# # --------------------------
+# RUN chown -R www-data:www-data /var/www/html
+
+
+# --------------------------
+# 5. Enable Moodle Cron
+# --------------------------
+COPY cron.sh /cron.sh
+RUN chmod +x /cron.sh
+# cron started by docker-compose
+
+# USER www-data
+
