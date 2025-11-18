@@ -33,7 +33,7 @@ services:
       MOODLE_DOCKER_DBUSER: moodle
       MOODLE_DOCKER_DBPASS: moodlepass
       MOODLE_DOCKER_DBPORT: 5432
-      MOODLE_DOCKER_WEB_HOST: localhost
+      MOODLE_DOCKER_WEB_HOST: 10.14.0.187
       MOODLE_DOCKER_WEB_PORT: "0.0.0.0:8080"
     ports:
       - "8080:80"
@@ -43,36 +43,67 @@ services:
     networks:
       - moodle-net
 
-  # cron:
-  #   build:
-  #     context: ./
-  #     dockerfile: MoodleDockerfIle.dev
-  #   container_name: moodle-cron
-  #   entrypoint: ["/cron.sh"]
-  #   depends_on:
-  #     - moodle
-  #   volumes:
-  #     - ./moodle:/var/www/html           
-  #     - ./moodledata:/var/www/moodledata
-  #   networks:
-  #     - moodle-net
 
-
-  jobe:
+  jobe1:
     image: trampgeek/jobeinabox
-    container_name: jobe-server
+    container_name: jobe-server1
     restart: always
     networks:
       - moodle-net
-    ports:
-      - "4000:80"
     environment:
       - ALLOWED_HOSTS="1"
 
+  jobe2:
+    image: trampgeek/jobeinabox
+    container_name: jobe-server2
+    restart: always
+    networks:
+      - moodle-net
+    environment:
+      - ALLOWED_HOSTS="1"
 
-# volumes:
-#   moodledata:
-#   dbdata:
+  # jobe3:
+  #   image: trampgeek/jobeinabox
+  #   container_name: jobe-server3
+  #   restart: always
+  #   networks:
+  #     - moodle-net
+  #   environment:
+  #     - ALLOWED_HOSTS="1"
+
+  # jobe4:
+  #   image: trampgeek/jobeinabox
+  #   container_name: jobe-server4
+  #   restart: always
+  #   networks:
+  #     - moodle-net
+  #   environment:
+  #     - ALLOWED_HOSTS="1"
+
+  # jobe5:
+  #   image: trampgeek/jobeinabox
+  #   container_name: jobe-server5
+  #   restart: always
+  #   networks:
+  #     - moodle-net
+  #   environment:
+  #     - ALLOWED_HOSTS="1"
+
+  jobe-lb:
+    image: nginx:latest
+    container_name: jobe-loadbalancer
+    ports:
+      - "4000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - jobe1
+      - jobe2
+      # - jobe3
+      # - jobe4
+      # - jobe5
+    networks:
+      - moodle-net
 
 networks:
   moodle-net:
