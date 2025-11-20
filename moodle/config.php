@@ -21,6 +21,7 @@ $CFG->dboptions = array (
 );
 
 $CFG->sslproxy = false;
+$CFG->site_is_public = getenv('MOODLE_DOCKER_WEB_PUBLIC') ?: false;
 $host = getenv('MOODLE_DOCKER_WEB_HOST') ?: 'localhost';
 $scheme = getenv('MOODLE_DOCKER_WEB_SCHEME') ?: 'http';
 $port = getenv('MOODLE_DOCKER_WEB_PORT');
