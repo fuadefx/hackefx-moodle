@@ -11,18 +11,18 @@ This repository contains the moodle docker setup for the Electrifex Hackefx 2.0 
 ### Step 1:
 `Clone this repository`
 
-###Step 2:
+### Step 2:
 `cd hackefx-moodle`
 `docker build -t hackefx:latest .`
 
-###Step 3:
+### Step 3:
 In docker-compose.yaml:
 	+ Edit the Trafeik labels for container with your following details:
 		- your website domain
 		- your email
 	+ Edit the moodle-hackefx container environment variables with your domain
 
-###Step 4:
+### Step 4:
 `sudo rm -rf dbdata moodledata'		  
 'mkdir dbdata moodledata`
 `sudo chown -R 999:999 dbdata`
