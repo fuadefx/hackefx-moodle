@@ -2,6 +2,39 @@ version: '3.9'
 
 services:
 
+  # ==========================
+  # Traefik Reverse Proxy (SSL)
+  # ==========================
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      
+      # SSL configuration
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=you@example.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+    networks:
+      - moodle-net
+
+
+  # ==========================
+  # PostgreSQL
+  # ==========================
   postgres:
     image: postgres:15
     container_name: moodle-postgres
@@ -11,18 +44,17 @@ services:
       POSTGRES_USER: moodle
       POSTGRES_PASSWORD: moodlepass
       PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
     volumes:
       - ./dbdata:/var/lib/postgresql/data
     networks:
       - moodle-net
 
 
+  # ==========================
+  # Moodle with SSL via Traefik
+  # ==========================
   moodle:
-    # build: .
-    # image: moodlehq/moodle-php-apache:8.2
-    image: hackefx:latest
+    image: hackefx:v3
     container_name: moodle-hackefx
     depends_on:
       - postgres
@@ -33,17 +65,25 @@ services:
       MOODLE_DOCKER_DBUSER: moodle
       MOODLE_DOCKER_DBPASS: moodlepass
       MOODLE_DOCKER_DBPORT: 5432
-      MOODLE_DOCKER_WEB_HOST: 10.14.0.187
-      MOODLE_DOCKER_WEB_PORT: "0.0.0.0:8080"
-    ports:
-      - "8080:80"
+      MOODLE_DOCKER_WEB_SCHEME: https
+      MOODLE_DOCKER_WEB_HOST: hackefx.electrifex.com
+      MOODLE_DOCKER_WEB_PORT: 443
     volumes:
-      # - ./moodle:/var/www/html
       - ./moodledata:/var/www/moodledata
     networks:
       - moodle-net
 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.moodle.rule=Host(`your.domain.com`)"
+      - "traefik.http.routers.moodle.entrypoints=websecure"
+      - "traefik.http.routers.moodle.tls.certresolver=myresolver"
+      - "traefik.http.services.moodle.loadbalancer.server.port=80"
 
+
+  # ==========================
+  # Jobe Servers
+  # ==========================
   jobe1:
     image: trampgeek/jobeinabox
     container_name: jobe-server1
@@ -62,33 +102,10 @@ services:
     environment:
       - ALLOWED_HOSTS="1"
 
-  # jobe3:
-  #   image: trampgeek/jobeinabox
-  #   container_name: jobe-server3
-  #   restart: always
-  #   networks:
-  #     - moodle-net
-  #   environment:
-  #     - ALLOWED_HOSTS="1"
 
-  # jobe4:
-  #   image: trampgeek/jobeinabox
-  #   container_name: jobe-server4
-  #   restart: always
-  #   networks:
-  #     - moodle-net
-  #   environment:
-  #     - ALLOWED_HOSTS="1"
-
-  # jobe5:
-  #   image: trampgeek/jobeinabox
-  #   container_name: jobe-server5
-  #   restart: always
-  #   networks:
-  #     - moodle-net
-  #   environment:
-  #     - ALLOWED_HOSTS="1"
-
+  # ==========================
+  # Jobe Load Balancer (HTTP only)
+  # ==========================
   jobe-lb:
     image: nginx:latest
     container_name: jobe-loadbalancer
@@ -99,11 +116,9 @@ services:
     depends_on:
       - jobe1
       - jobe2
-      # - jobe3
-      # - jobe4
-      # - jobe5
     networks:
       - moodle-net
+
 
 networks:
   moodle-net:

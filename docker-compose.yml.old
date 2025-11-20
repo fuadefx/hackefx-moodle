@@ -1,0 +1,110 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: moodle-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: moodledb
+      POSTGRES_USER: moodle
+      POSTGRES_PASSWORD: moodlepass
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./dbdata:/var/lib/postgresql/data
+    networks:
+      - moodle-net
+
+
+  moodle:
+    # build: .
+    # image: moodlehq/moodle-php-apache:8.2
+    image: hackefx:latest
+    container_name: moodle-hackefx
+    depends_on:
+      - postgres
+    environment:
+      MOODLE_DOCKER_DBTYPE: pgsql
+      MOODLE_DOCKER_DBHOST: postgres
+      MOODLE_DOCKER_DBNAME: moodledb
+      MOODLE_DOCKER_DBUSER: moodle
+      MOODLE_DOCKER_DBPASS: moodlepass
+      MOODLE_DOCKER_DBPORT: 5432
+      MOODLE_DOCKER_WEB_SCHEME: http
+      MOODLE_DOCKER_WEB_HOST: hackefx.electrifex.com
+      MOODLE_DOCKER_WEB_PORT: "0.0.0.0:80"
+    ports:
+      - "80:80"
+    volumes:
+      # - ./moodle:/var/www/html
+      - ./moodledata:/var/www/moodledata
+    networks:
+      - moodle-net
+
+
+  jobe1:
+    image: trampgeek/jobeinabox
+    container_name: jobe-server1
+    restart: always
+    networks:
+      - moodle-net
+    environment:
+      - ALLOWED_HOSTS="1"
+
+  jobe2:
+    image: trampgeek/jobeinabox
+    container_name: jobe-server2
+    restart: always
+    networks:
+      - moodle-net
+    environment:
+      - ALLOWED_HOSTS="1"
+
+  # jobe3:
+  #   image: trampgeek/jobeinabox
+  #   container_name: jobe-server3
+  #   restart: always
+  #   networks:
+  #     - moodle-net
+  #   environment:
+  #     - ALLOWED_HOSTS="1"
+
+  # jobe4:
+  #   image: trampgeek/jobeinabox
+  #   container_name: jobe-server4
+  #   restart: always
+  #   networks:
+  #     - moodle-net
+  #   environment:
+  #     - ALLOWED_HOSTS="1"
+
+  # jobe5:
+  #   image: trampgeek/jobeinabox
+  #   container_name: jobe-server5
+  #   restart: always
+  #   networks:
+  #     - moodle-net
+  #   environment:
+  #     - ALLOWED_HOSTS="1"
+
+  jobe-lb:
+    image: nginx:latest
+    container_name: jobe-loadbalancer
+    ports:
+      - "4000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - jobe1
+      - jobe2
+      # - jobe3
+      # - jobe4
+      # - jobe5
+    networks:
+      - moodle-net
+
+networks:
+  moodle-net:
